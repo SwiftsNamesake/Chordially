@@ -79,18 +79,18 @@ class Piano(object):
 
 		# Table of conversion functions TO an index
 		conversions = {
-			int: 	lambda self, k: k,								 # Index (eg. 5)
-			tuple:  lambda self, k: (k[1]-1)*7 + ord(k[0])-ord('A'), # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-			str:	lambda self, k: self.alias((k[0], int(k[1]))) 	 # Note name (eg. 'G2') (forgive me Father, for I have recursed)
+			int: 	lambda self, k: k,								 		# Index (eg. 5)
+			tuple:  lambda self, k: (k[1]-1)*7 + ord(k[0])-ord('A'), 		# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+			str:	lambda self, k: (int(k[1])-1)*7 + ord(k[0])-ord('A')  	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
 		}
 
 		# Table of conversion functions FROM an index
 		# TODO: Break out some general functionality (?)
-		# TODO: Tuple conversion can probably be simplified by recognizing the pattern
+		# TODO: Tuple conversion can probably be simplified by recognizing the pattern (cf. self.note)
 		aliases = {
-			int: 	lambda self, k: k,						 		 # Index (eg. 5)
-			tuple:  lambda self, k: (self.note(), self.octave()), 	 # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-			str:	lambda self, k: self.note() + str(self.octave()) # Note name (eg. 'G2') (forgive me Father, for I have recursed)
+			int: 	lambda self, k: k,						 		 	# Index (eg. 5)
+			tuple:  lambda self, k: (self.note(k), self.octave(k)), 	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+			str:	lambda self, k: self.note(k) + str(self.octave(k)) 	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
 		}
 
 		# TODO: Static utility methods (?)
@@ -128,11 +128,20 @@ class Piano(object):
 		def normalize(self, key):
 			return self.alias(key, to=int)
 
-		def note(self):
-			return 'CDEFGAB'[MultiSwitch((0, 1): 0, (): 1, (): 2, (): 3, (): 4, (): 5, (): 6)[k%12]] # TODO: Take offset and accidentals into account
+		def note(self, key):
+			assert isinstance(key, int)
+			return 'CDEFGAB'[MultiSwitch({
+				(0,1): 0,
+				(2,3): 1,
+				(4,): 2,
+				(5,6): 3,
+				(7,8): 4,
+				(9,10): 5,
+				(11,): 6})[key%12]] # TODO: Take offset and accidentals into account
 
-		def octave(self):
-			return self.index//12 # TODO: Take offset into account
+		def octave(self, key):
+			assert isinstance(key, int)
+			return key//12 # TODO: Take offset into account
 
 		def alias(self, key, to=int):
 			# Converts between different representations (aliases) of a key
@@ -141,7 +150,7 @@ class Piano(object):
 			# TODO: More elegant scheme for lazy evaluation (?)
 			print('key={!r}, to={!r}'.format(key, to))
 			index = self.conversions[type(key)](self, key) 
-			return self.aliases[type(key)](self, key)
+			return self.aliases[type(key)](self, index)
 
 		def findKind(self):
 			# TODO: Take offset (self.start) into account
@@ -160,7 +169,7 @@ class Piano(object):
 			dx, dy, bdx, bdy = sizeWhite + sizeBlack # Unpack widths and heights
 			middle 	= [(0.0, dy), (dx, dy), (dx, bdy), (dx-bdx/2, bdy), (dx-bdx/2, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)]	# 
 			return {
-				self.BLACK: [(0.0, 0.0), (bdx, 0.0), (bdx, bdy), (0.0, bdy)],					#
+				self.BLACK: self.translate(dx-bdx/2, 0.0,[(0.0, 0.0), (bdx, 0.0), (bdx, bdy), (0.0, bdy)]),	#
 				self.LEFT: 	middle[:2] + [(dx, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)],	#
 				self.MIDDLE: middle,															#
 				self.RIGHT:  middle[:5] + [(0.0, 0.0), (0.0, dy)]								#
@@ -168,26 +177,32 @@ class Piano(object):
 
 		def resize(self, sizeWhite, sizeBlack):
 			self.sizeWhite  = sizeWhite
-			self.sizeBlack = sizeBlack
-			self.vertices = self.makeVertices(self.sizeWhite, self.sizeBlack)
+			self.sizeBlack 	= sizeBlack
+			self.vertices 	= self.makeVertices(self.sizeWhite, self.sizeBlack)
 
 		def inside(self, x, y):
 			# Deterimines if a point lies on the key
 			return False # TODO: Implement (duh)
 
-		def render(self, surface, fill=0xFFFFFF, outline=(0,0,0), cycle=True, width=8):
-			pygame.draw.polygon(surface, fill, self.vertices)
-			pygame.draw.aalines(surface, outline, True, self.vertices, width)
+		def render(self, surface, outline=(0,0,0), origin=(0,0)):
+			# TODO: Cache translation (?)
+			dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
+			vertices = self.translate(origin[0]+dx*self.octave(self.index), origin[1], self.vertices)
+			pygame.draw.polygon(surface, self.fill, vertices)
+			pygame.draw.aalines(surface, outline, True, vertices, True)
 
-		def label(self, surface, fill=(255, 20, 20), pady=5.0):
+		def translate(self, dx, dy, vertices):
+			return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
+
+		def label(self, surface, fill=(255, 20, 20), pady=5.0, origin=(0,0)):
 			# TODO: Refactor, clarify and comment the position calculations (?)
-			origin = (0,0) # TODO: Fix origin
-			dx, dy, bdx, bdy = sizeWhite + sizeBlack # Unpack widths and heights
+			# TODO: Fix origin
+			dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
 			text = self.font.render(self.name, 2, fill)
 			surface.blit(text, (origin[0]+(dx-text.get_size()[0])/2, origin[1]+dy-text.get_size()[1]-pady))
 
 		def play(self):
-			pass
+			raise NotImplementedError('No audio for now I\'m afraid. Sincere apologies.')
 
 
 	def __init__(self):
@@ -218,6 +233,8 @@ class Piano(object):
 
 		'''
 
+		for key in self.keys:
+			key.render(self.surface, outline=(0,0,0), origin=(0,0))
 		surface.blit(self.surface, position)
 
 
@@ -303,12 +320,12 @@ class Piano(object):
 		# drawKey(s, translate((dx+5)*2, 0, whiteR))
 
 		# surface.blit(s, (10,10))
-		self.surface.blit(octave, (0,0))
+		# self.surface.blit(octave, (0,0))
 		return [Piano.Key(i, (dx, dy), (bdx, bdy)) for i in range(88)]
 
 
 
-def tick(dt, ctx):
+def tick(dt, ctx, world):
 	
 	'''
 	Docstring goes here
@@ -322,7 +339,7 @@ def tick(dt, ctx):
 
 	surface.fill(((0, 72, 50), (0xFF, 0xFF, 0), colours['BG'])[2])
 
-	Piano().render(surface, (20, 20))
+	world.piano.render(surface, (20, 20))
 	pygame.draw.aalines(surface, ((255+255*cos(θ))//2, (255+255*sin(θ))//2, 0xF9), True, p(10), False)
 
 	pygame.display.flip()
@@ -342,9 +359,10 @@ def main():
 	
 	# Setup
 	mFont = pygame.font.SysFont('oldenglishtext', 20)
+	world = namedtuple('Word', 'piano')(Piano())
 
 	# Events
-	ctx.events.always = lambda dt: tick(dt, ctx)
+	ctx.events.always = lambda dt: tick(dt, ctx, world)
 	ctx.events.bind({'type': KEYDOWN, 'mod': 1}, lambda e: print('Hello'))
 	ctx.events.bind({'type': KEYDOWN, 'key': K_ESCAPE}, lambda e: pygame.quit())
 
