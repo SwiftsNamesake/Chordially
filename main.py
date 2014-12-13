@@ -80,8 +80,8 @@ class Piano(object):
 		# Table of conversion functions TO an index
 		conversions = {
 			int: 	lambda self, k: k,								 		# Index (eg. 5)
-			tuple:  lambda self, k: (k[1]-1)*7 + ord(k[0])-ord('A'), 		# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-			str:	lambda self, k: (int(k[1])-1)*7 + ord(k[0])-ord('A')  	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
+			tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]), 	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+			str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0]) # Note name (eg. 'G2') (forgive me Father, for I have recursed)
 		}
 
 		# Table of conversion functions FROM an index
@@ -120,12 +120,13 @@ class Piano(object):
 			self.sizeWhite = sizeWhite # Size of a white key
 			self.sizeBlack = sizeBlack # Size of a black key
 
-			self.vertices = self.makeVertices(sizeWhite, sizeBlack) # Vertices
+			self.vertices = self.makeVertices(self.sizeWhite, self.sizeBlack) # Vertices
 
 			self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0))  # Fill colour
 			self.font = pygame.font.SysFont('Tahoma', 22)							 # Label font
 
 		def normalize(self, key):
+			# Converts to an index
 			return self.alias(key, to=int)
 
 		def note(self, key):
@@ -149,8 +150,9 @@ class Piano(object):
 			# TODO: Implement multi-way mapping or translation (maybe via an A to B to C and C to B to A scheme)
 			# TODO: More elegant scheme for lazy evaluation (?)
 			print('key={!r}, to={!r}'.format(key, to))
-			index = self.conversions[type(key)](self, key) 
-			return self.aliases[type(key)](self, index)
+			index = self.conversions[type(key)](self, key)
+			print('Index of %r is %d' % (key, index))
+			return self.aliases[to](self, index)
 
 		def findKind(self):
 			# TODO: Take offset (self.start) into account
@@ -170,9 +172,9 @@ class Piano(object):
 			middle 	= [(0.0, dy), (dx, dy), (dx, bdy), (dx-bdx/2, bdy), (dx-bdx/2, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)]	# 
 			return {
 				self.BLACK: self.translate(dx-bdx/2, 0.0,[(0.0, 0.0), (bdx, 0.0), (bdx, bdy), (0.0, bdy)]),	#
-				self.LEFT: 	middle[:2] + [(dx, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)],	#
-				self.MIDDLE: middle,															#
-				self.RIGHT:  middle[:5] + [(0.0, 0.0), (0.0, dy)]								#
+				self.LEFT: 	middle[:2] + [(dx, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)],				#
+				self.MIDDLE: middle,																		#
+				self.RIGHT:  middle[:5] + [(0.0, 0.0), (0.0, dy)]											#
 			}[self.shape]
 
 		def resize(self, sizeWhite, sizeBlack):
@@ -186,8 +188,10 @@ class Piano(object):
 
 		def render(self, surface, outline=(0,0,0), origin=(0,0)):
 			# TODO: Cache translation (?)
+			# if self.kind==self.BLACK: pass
 			dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
-			vertices = self.translate(origin[0]+dx*self.octave(self.index), origin[1], self.vertices)
+			print('Octave of %s is %d' % (self, self.octave(self.index)))
+			vertices = self.translate(origin[0]+dx*self.octave(self.index)*7+'CDEFGAB'.index(self.name[0]), origin[1], self.vertices)
 			pygame.draw.polygon(surface, self.fill, vertices)
 			pygame.draw.aalines(surface, outline, True, vertices, True)
 
@@ -225,6 +229,8 @@ class Piano(object):
 		self.surface = pygame.Surface((self.dx*88/12*7, 10.0+self.dy)) 	#
 		self.keys 	 = self.build()										# Create the piano
 
+		self.update()
+
 		
 	def render(self, surface, position):
 
@@ -233,16 +239,25 @@ class Piano(object):
 
 		'''
 
+		surface.blit(self.surface, position)
+
+
+	def update(self):
+
+		'''
+		Redraws keys and labels
+
+		'''
+
 		for key in self.keys:
 			key.render(self.surface, outline=(0,0,0), origin=(0,0))
-		surface.blit(self.surface, position)
 
 
 	def key(self, key):
 		return {
 			int: 	self.keys[key],									# Index (eg. 5)
-			tuple:  self.keys[(key[1]-1)*7 + ord(key[0])-ord('A')], # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-			str:	self.key((key[0], int(key[1]))) 				# Note name (eg. 'G2') (forgive me Father, for I have recursed)
+			tuple:  self.keys[(key[1]-1)*7 + 'CDEFGAB'.index(key)], # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+			str:	self.key((key[0], int(key[1]))) 				# Note name (eg. 'G2')
 		}[type(key)]
 
 
