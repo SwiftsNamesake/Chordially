@@ -67,8 +67,8 @@ class Key(object):
 
 		self.vertices = self.makeVertices(self.sizeWhite, self.sizeBlack) # Vertices
 
-		self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0))  # Fill colour
-		self.font = pygame.font.SysFont('Tahoma', 22)							 # Label font
+		self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0)) # Fill colour
+		self.font = pygame.font.SysFont(('oldenglishtext', 'Tahoma')[0], 22)	# Label font
 
 
 	def normalize(self, key):
@@ -170,7 +170,7 @@ class Key(object):
 		return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
 
 
-	def label(self, surface, fill=(255, 20, 20), pady=5.0, origin=(0,0)):
+	def label(self, surface, fill=(0xB1, 0xB0, 0xA3), pady=5.0, origin=(0,0)):
 		# TODO: Refactor, clarify and comment the position calculations (?)
 		# TODO: Fix origin
 		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
