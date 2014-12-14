@@ -170,6 +170,17 @@ class Piano(object):
 		return [Key(i, (dx, dy), (bdx, bdy)) for i in range(88)]
 
 
+	def playChord(self, chord):
+		
+		'''
+		Docstring goes here
+	
+		'''
+
+		for note in chord:
+			self.key(note).play()
+
+
 
 def main():
 	
