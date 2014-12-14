@@ -15,21 +15,10 @@
 
 
 from Key import Key
+from utilities import debug
 from SwiftUtils.MultiSwitch import MultiSwitch
+
 import pygame
-
-
-
-DEBUG = False
-
-if not DEBUG:
-	debug = lambda *args, **kwargs: None
-else:
-	def debug(*args, **kwargs):
-		# Dangerous hack
-		caller = getframeinfo(currentframe().f_back)
-		print('[{0.lineno}]'.format(caller), end=' ')
-		print(*args, **kwargs)
 
 
 
@@ -86,10 +75,10 @@ class Piano(object):
 
 	def key(self, key):
 		return {
-			int: 	self.keys[key],									# Index (eg. 5)
-			tuple:  self.keys[(key[1]-1)*7 + 'CDEFGAB'.index(key)], # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-			str:	self.key((key[0], int(key[1]))) 				# Note name (eg. 'G2')
-		}[type(key)]
+			int: 	lambda: self.keys[key],									# Index (eg. 5)
+			tuple:  lambda: self.keys[(key[1]-1)*7 + 'CDEFGAB'.index(key)], # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+			str:	lambda: self.keys((key[0], int(key[1]))) 				# Note name (eg. 'G2')
+		}[type(key)]()
 
 
 	def translate(self, dx, dy, vertices):
@@ -179,6 +168,7 @@ class Piano(object):
 
 		for note in chord:
 			self.key(note).play()
+		self.update()
 
 
 

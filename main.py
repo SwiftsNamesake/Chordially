@@ -109,7 +109,7 @@ def main():
 	ctx.events.always = lambda dt: tick(dt, ctx, world)
 	ctx.events.bind({'type': KEYDOWN, 'mod': 1}, lambda e: print('Hello'))
 	ctx.events.bind({'type': KEYDOWN, 'key': K_ESCAPE}, lambda e: pygame.quit())
-	ctx.events.bind({'type': KEYDOWN, 'key': K_SPACE}, lambda e: world.piano.playChord((5, 7, 9)))
+	ctx.events.bind({'type': KEYDOWN, 'key': K_SPACE}, lambda e: world.piano.playChord((5, 9, 12)))
 
 	ctx.events.mainloop()
 

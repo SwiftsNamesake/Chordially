@@ -23,7 +23,7 @@ class Chords(object):
 
 	'''
 
-	C = (0, 2, 4)
+	C = (0, 4, 7)
 	D = (1, 3, 5)
 	E = (2, 4, 6)
 	F = (3, 5, 7)
@@ -38,8 +38,6 @@ class Chords(object):
 	Gmaj7 = (4, 6, 8)
 	Amaj7 = (5, 7, 9)
 	Bmaj7 = (6, 8, 10)
-
-
 
 
 

@@ -16,19 +16,7 @@
 
 import pygame
 from SwiftUtils.MultiSwitch import MultiSwitch
-
-
-
-DEBUG = False
-
-if not DEBUG:
-	debug = lambda *args, **kwargs: None
-else:
-	def debug(*args, **kwargs):
-		# Dangerous hack
-		caller = getframeinfo(currentframe().f_back)
-		print('[{0.lineno}]'.format(caller), end=' ')
-		print(*args, **kwargs)
+from utilities import debug
 
 
 
@@ -61,6 +49,7 @@ class Key(object):
 		str:	lambda self, k: self.note(k) + str(self.octave(k)) 	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
 	}
 
+
 	def __init__(self, which, sizeWhite, sizeBlack, first='C0'):
 		#
 		self.first = self.normalize(first) # First (leftmost) key (useful for calculating indeces)
@@ -80,9 +69,11 @@ class Key(object):
 		self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0))  # Fill colour
 		self.font = pygame.font.SysFont('Tahoma', 22)							 # Label font
 
+
 	def normalize(self, key):
 		# Converts to an index
 		return self.alias(key, to=int)
+
 
 	def note(self, key):
 		# TODO: Use string as key instead, would probably be more legible (?)
@@ -96,9 +87,11 @@ class Key(object):
 			(9,10): 5,
 			(11,): 6})[key%12]] # TODO: Take offset and accidentals into account
 
+
 	def octave(self, key):
 		assert isinstance(key, int)
 		return key//12 # TODO: Take offset into account
+
 
 	def alias(self, key, to=int):
 		# Converts between different representations (aliases) of a key
@@ -110,18 +103,23 @@ class Key(object):
 		debug('Index of %r is %d' % (key, index))
 		return self.aliases[to](self, index)
 
+
 	def findKind(self):
 		# TODO: Take offset (self.start) into account
 		return self.WHITE if self.index % 12 in (0, 2, 4, 5, 7, 9, 11) else self.BLACK
 
+
 	def findShape(self):
 		return MultiSwitch({ (0,5): self.RIGHT, (2,7,9): self.MIDDLE, (4,11): self.LEFT }).get(self.index % 12, self.BLACK) # TODO: Implement MultiDict (?)
+
 
 	def __str__(self):
 		return self.name
 
+
 	def __repr__(self):
 		return 'Key(index={.index}, name={.name}, type={.type}'.format(self)
+
 
 	def makeVertices(self, sizeWhite, sizeBlack):
 		dx, dy, bdx, bdy = sizeWhite + sizeBlack # Unpack widths and heights
@@ -133,18 +131,22 @@ class Key(object):
 			self.RIGHT:  middle[:5] + [(0.0, 0.0), (0.0, dy)]											#
 		}[self.shape]
 
+
 	def resize(self, sizeWhite, sizeBlack):
 		self.sizeWhite  = sizeWhite
 		self.sizeBlack 	= sizeBlack
 		self.vertices 	= self.makeVertices(self.sizeWhite, self.sizeBlack)
 
+
 	def origin(self, absolute=(0,0)):
 		# Relative coordinates of the key's origin (top left corner)
 		return absolute[0]+self.sizeWhite[0]*(self.octave(self.index)*7+'CDEFGAB'.index(self.name[0])), absolute[1]
 
+
 	def inside(self, x, y):
 		# Deterimines if a point lies on the key
 		return False # TODO: Implement (duh)
+
 
 	def render(self, surface, outline=(0,0,0), origin=(0,0), labelled=False):
 		# TODO: Cache translation (?)
@@ -160,8 +162,10 @@ class Key(object):
 		if labelled:
 			self.label(surface, origin=corner)
 
+
 	def translate(self, dx, dy, vertices):
 		return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
+
 
 	def label(self, surface, fill=(255, 20, 20), pady=5.0, origin=(0,0)):
 		# TODO: Refactor, clarify and comment the position calculations (?)
@@ -170,16 +174,27 @@ class Key(object):
 		text = self.font.render(self.name, 2, fill)
 		surface.blit(text, (origin[0]+(dx-text.get_size()[0])/2, origin[1]+dy-text.get_size()[1]-pady))
 
-	def play(self):
-		raise NotImplementedError('No audio for now I\'m afraid. Sincere apologies.')
 
+	def play(self, fill=(210, 190, 50), duration=None):
+
+		'''
+		Docstring goes here
+
+		'''
+
+		self.oldfill = self.fill # Save current fill colour so that that it can be restored later (when the key is released)
+		self.fill = fill
+		if duration is not None:
+			pass
+
+		# raise NotImplementedError('No audio for now I\'m afraid. Sincere apologies.')
 
 
 def main():
 	
 	'''
 	Test suite
-
+	
 	'''
 
 	pygame.init()
