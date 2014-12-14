@@ -6,8 +6,8 @@
 # December 13 2014
 #
 
-# TODO | - 
-#        -
+# TODO | - Unicode accidentals (?)
+#        - 
 #
 # SPEC | -
 #        -
@@ -34,19 +34,21 @@ class Key(object):
 	MIDDLE = 5 # TODO: Rename BOTH (?)
 
 	# Table of conversion functions TO an index
+	# NOTE: Assumes accidental comes last
 	conversions = {
-		int: 	lambda self, k: k,								 		# Index (eg. 5)
-		tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]), 	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-		str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0]) # Note name (eg. 'G2') (forgive me Father, for I have recursed)
+		int: 	lambda self, k: k,								 														# Index (eg. 5)
+		tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]), #+ (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]),	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+		str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0])# + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]) 	# Note name (eg. 'G2')
 	}
 
 	# Table of conversion functions FROM an index
+	# (forgive me Father, for I have recursed)
 	# TODO: Break out some general functionality (?)
 	# TODO: Tuple conversion can probably be simplified by recognizing the pattern (cf. self.note)
 	aliases = {
-		int: 	lambda self, k: k,						 		 	# Index (eg. 5)
-		tuple:  lambda self, k: (self.note(k), self.octave(k)), 	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-		str:	lambda self, k: self.note(k) + str(self.octave(k)) 	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
+		int: 	lambda self, k: k,						 		 												 # Index (eg. 5)
+		tuple:  lambda self, k: (self.note(k), self.octave(k), self.accidental(k))[:2+(self.accidental != '')],  # (Note, Octave[, Accidental]) (eg. ('A', 3)) # TODO: Fix alignment
+		str:	lambda self, k: self.note(k) + str(self.octave(k)) + self.accidental(k) 						 # Note name (eg. 'G2' or 'G2#')
 	}
 
 	lazy = lambda code, capture='': eval('lambda {}: {}'.format(code, capture))
@@ -68,7 +70,7 @@ class Key(object):
 		self.vertices = self.makeVertices(self.sizeWhite, self.sizeBlack) # Vertices
 
 		self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0)) # Fill colour
-		self.font = pygame.font.SysFont(('oldenglishtext', 'Tahoma')[0], 22)	# Label font
+		self.font = pygame.font.SysFont(('oldenglishtext', 'Tahoma')[1], 22)	# Label font
 
 
 	def normalize(self, key):
@@ -90,8 +92,38 @@ class Key(object):
 
 
 	def octave(self, key):
+		# TODO: Take offset into account
+		# TODO: Accept string arguments
+		# TODO: Make static (?)
 		assert isinstance(key, int)
-		return key//12 # TODO: Take offset into account
+		return key//12
+
+
+	def accidental(self, key):
+
+		'''
+		Determines the accidental (half-note shift) of a particular note.
+		The possible values are ♭ (flat), ♯ (sharp) and ♮ (natural).
+
+		These values are currently represented as ASCII-compatible strings ('b', '#', '')
+		for reasons of convenience and compatibility.
+
+		The current implementation will never produce a flat note (eg. C♯, not D♭).
+		This may change when support for string arguments or scales is added.
+		
+		'''
+
+		# TODO: Take offset into account
+		# TODO: Accept string arguments
+		# TODO: Make static (?)
+		
+		assert isinstance(key, int) # or isinstance(key, str)
+		accidentals = (1, 3, 6, 8, 10) # TODO: Extract this value (useful in multiple contexts)
+		# key = key%12
+		# (key < 5 and key % 2 == 1) or (key > 5 and key % 2 == 0)
+		acc = ('', '#', 'b')[(key%12) in accidentals] # Treats bool as index
+		print('Key with index {} does {}have an accidental{}.'.format(key, {'': 'not ', '#': ''}[acc], {'': '', '#': '(#)'}[acc]))
+		return acc
 
 
 	def alias(self, key, to=int):

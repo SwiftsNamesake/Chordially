@@ -70,7 +70,7 @@ class Piano(object):
 		'''
 
 		for key in self.keys:
-			key.render(self.surface, outline=(0,0,0), origin=(0,0), labelled=True)
+			key.render(self.surface, outline=(0,0,0), origin=(0,0), labelled=(key.kind is Key.WHITE))
 
 
 	def key(self, key):
@@ -83,7 +83,7 @@ class Piano(object):
 
 	def translate(self, dx, dy, vertices):
 		return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
-		
+
 
 	def build(self):
 
