@@ -6,7 +6,7 @@
 # December 13 2014
 #
 
-# TODO | -
+# TODO | - Keep track of 'dirty' keys to improve rendering performance
 #        -
 #
 # SPEC | -
@@ -83,22 +83,7 @@ class Piano(object):
 
 	def translate(self, dx, dy, vertices):
 		return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
-
-
-	def drawKey(self, surf, vertices, fill=0xFFFFFF, outline=(0,0,0), cycle=True, width=8):
-		pygame.draw.polygon(surf, fill, vertices)
-		pygame.draw.aalines(surf, outline, True, vertices, width)
-
-
-	def noteLabel(self, key, fill=(0,0,0), font=('Tahoma', 22)):
-		return pygame.font.SysFont(*font).render(key, 2, fill) # Text, anti-alias, color, background=None
-
-
-	def drawLabel(self, surf, key, origin=(0,0), fill=(0,0,0), pady=5.0, font=('Tahoma', 22)):
-		# TODO: Refactor, clarify and comment the position calculations (?)
-		label = pygame.font.SysFont(*font).render(key, 2, fill)
-		surf.blit(label, (origin[0]+(self.dx-label.get_size()[0])/2, origin[1]+self.dy-label.get_size()[1]-pady))
-
+		
 
 	def build(self):
 
@@ -159,7 +144,7 @@ class Piano(object):
 		return [Key(i, (dx, dy), (bdx, bdy)) for i in range(88)]
 
 
-	def playChord(self, chord):
+	def playChord(self, chord, fill=(210, 190, 50)):
 		
 		'''
 		Docstring goes here
@@ -167,7 +152,7 @@ class Piano(object):
 		'''
 
 		for note in chord:
-			self.key(note).play()
+			self.key(note).play(fill=fill)
 		self.update()
 
 

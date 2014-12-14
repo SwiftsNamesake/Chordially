@@ -110,6 +110,7 @@ def main():
 	ctx.events.bind({'type': KEYDOWN, 'mod': 1}, lambda e: print('Hello'))
 	ctx.events.bind({'type': KEYDOWN, 'key': K_ESCAPE}, lambda e: pygame.quit())
 	ctx.events.bind({'type': KEYDOWN, 'key': K_SPACE}, lambda e: world.piano.playChord((5, 9, 12)))
+	ctx.events.bind({'type': KEYUP, 'key': K_SPACE, 'doc': 'Play a C chord'}, lambda e: world.piano.playChord((5, 9, 12), fill=(255, 255, 255)))
 
 	ctx.events.mainloop()
 

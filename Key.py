@@ -6,7 +6,7 @@
 # December 13 2014
 #
 
-# TODO | -
+# TODO | - 
 #        -
 #
 # SPEC | -
@@ -49,6 +49,7 @@ class Key(object):
 		str:	lambda self, k: self.note(k) + str(self.octave(k)) 	# Note name (eg. 'G2') (forgive me Father, for I have recursed)
 	}
 
+	lazy = lambda code, capture='': eval('lambda {}: {}'.format(code, capture))
 
 	def __init__(self, which, sizeWhite, sizeBlack, first='C0'):
 		#
@@ -122,6 +123,7 @@ class Key(object):
 
 
 	def makeVertices(self, sizeWhite, sizeBlack):
+		# 
 		dx, dy, bdx, bdy = sizeWhite + sizeBlack # Unpack widths and heights
 		middle 	= [(0.0, dy), (dx, dy), (dx, bdy), (dx-bdx/2, bdy), (dx-bdx/2, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)]	# 
 		return {
@@ -133,6 +135,7 @@ class Key(object):
 
 
 	def resize(self, sizeWhite, sizeBlack):
+		# 
 		self.sizeWhite  = sizeWhite
 		self.sizeBlack 	= sizeBlack
 		self.vertices 	= self.makeVertices(self.sizeWhite, self.sizeBlack)
@@ -171,7 +174,7 @@ class Key(object):
 		# TODO: Refactor, clarify and comment the position calculations (?)
 		# TODO: Fix origin
 		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
-		text = self.font.render(self.name, 2, fill)
+		text = self.font.render(self.name, 2, fill) # Label text, anti-alias, fill colour
 		surface.blit(text, (origin[0]+(dx-text.get_size()[0])/2, origin[1]+dy-text.get_size()[1]-pady))
 
 
@@ -198,7 +201,8 @@ def main():
 	'''
 
 	pygame.init()
-	piano = Piano()
+	keys = [Key('C4', (20, 40), (10, 18))]
+	# piano = Piano()
 
 
 
