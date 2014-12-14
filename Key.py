@@ -37,8 +37,8 @@ class Key(object):
 	# NOTE: Assumes accidental comes last
 	conversions = {
 		int: 	lambda self, k: k,								 														# Index (eg. 5)
-		tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]), #+ (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]),	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-		str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0])# + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]) 	# Note name (eg. 'G2')
+		tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]),	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+		str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]) 	# Note name (eg. 'G2')
 	}
 
 	# Table of conversion functions FROM an index
@@ -70,7 +70,7 @@ class Key(object):
 		self.vertices = self.makeVertices(self.sizeWhite, self.sizeBlack) # Vertices
 
 		self.fill = ((255, 255, 255) if self.kind is self.WHITE else (0, 0, 0)) # Fill colour
-		self.font = pygame.font.SysFont(('oldenglishtext', 'Tahoma')[1], 22)	# Label font
+		self.font = pygame.font.SysFont(('oldenglishtext', 'Tahoma')[0], 22)	# Label font
 
 
 	def normalize(self, key):
@@ -122,7 +122,6 @@ class Key(object):
 		# key = key%12
 		# (key < 5 and key % 2 == 1) or (key > 5 and key % 2 == 0)
 		acc = ('', '#', 'b')[(key%12) in accidentals] # Treats bool as index
-		print('Key with index {} does {}have an accidental{}.'.format(key, {'': 'not ', '#': ''}[acc], {'': '', '#': '(#)'}[acc]))
 		return acc
 
 
