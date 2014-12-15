@@ -60,6 +60,9 @@ class Application(EventDispatcher):
 
 		'''
 
+		# 
+		super().__init__()
+
 		# Initialize basics
 		pygame.init()
 		self.canvas = pygame.display.set_mode(size)
@@ -87,7 +90,7 @@ class Application(EventDispatcher):
 		self.bind({'type': KEYUP, 'key': K_SPACE}, lambda p, e: self.piano.playChord((5, 9, 12), fill=(255, 255, 255)))
 
 
-	def tick(self):
+	def tick(self, dt):
 
 		'''
 		Docstring goes here
@@ -95,7 +98,7 @@ class Application(EventDispatcher):
 		'''
 
 		self.canvas.fill(((0, 72, 50), (0xFF, 0xFF, 0), colours['BG'])[2])
-		self.piano.render(surface, (20, 20))
+		self.piano.render(self.canvas, (20, 20))
 		pygame.display.flip()
 		self.clock.tick(60)
 
@@ -111,65 +114,12 @@ class Application(EventDispatcher):
 
 
 
-def createContext(size):
-
-	'''
-	Docstring goes here
-
-	'''
-
-	pygame.init()
-	surface = pygame.display.set_mode(size)
-	pygame.display.set_caption('Chordially')
-	clock = pygame.time.Clock()
-
-	return Context(surface, size, EventDispatcher(), clock)
-
-
-def tick(dt, ctx, world):
-	
-	'''
-	Docstring goes here
-
-	'''
-
-	surface = ctx.surface
-	θ = 0.0
-
-	p = lambda sides: [(160+60*(sin(θ)+1.5)*cos(θ+s*2*π/sides)+250, 160+60*(sin(θ)+1.5)*sin(θ+s*2*π/sides)+20) for s in range(sides)]
-
-	surface.fill(((0, 72, 50), (0xFF, 0xFF, 0), colours['BG'])[2])
-
-	world.piano.render(surface, (20, 20))
-	pygame.draw.aalines(surface, ((255+255*cos(θ))//2, (255+255*sin(θ))//2, 0xF9), True, p(10), False)
-
-	pygame.display.flip()
-	ctx.clock.tick(60)
-
-
-
 def main():
 	
 	'''
 	Docstring goes here
 
 	'''
-
-	# Initialize basic components (pygame, events, window)
-	# ctx = createContext((720*2, 480))
-	
-	# # Setup
-	# mFont = pygame.font.SysFont('oldenglishtext', 20)
-	# world = namedtuple('Word', 'piano')(Piano())
-
-	# # Events
-	# ctx.events.always = lambda dt: tick(dt, ctx, world)
-	# ctx.events.bind({'type': KEYDOWN, 'mod': 1}, lambda p, e: print('Hello'))
-	# ctx.events.bind({'type': KEYDOWN, 'key': K_ESCAPE}, lambda p, e: pygame.quit())
-	# ctx.events.bind({'type': KEYDOWN, 'key': K_SPACE, 'doc': 'Play an F chord'}, lambda p, e: (print(p.doc), world.piano.playChord((5, 9, 12))))
-	# ctx.events.bind({'type': KEYUP, 'key': K_SPACE}, lambda p, e: world.piano.playChord((5, 9, 12), fill=(255, 255, 255)))
-
-	# ctx.events.mainloop()
 
 	app = Application('Chordially', (720*2, 480))
 	app.run()
