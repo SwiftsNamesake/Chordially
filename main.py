@@ -89,15 +89,6 @@ class Application(EventDispatcher):
 
 		'''
 		
-		for key in ('C1', 'C2#', 'G3', 'G4', 'A4#'):
-			assert key == self.piano.key(key).name, 'Key should be {} but is instead ({}, {}) ({}, {})'.format(key,
-																										 self.piano.key(key).name, self.piano.key(key).index,
-																										 self.piano.keyUtils.alias(key, to=str),
-																										 self.piano.keyUtils.alias(key))
-			print('Key {0} has index {1.index} and name {1.name}'.format(key, self.piano.key(key)))
-
-		# print('C2: {}, F2: {}, G2: {}'.format(self.piano.key('C2').index, self.piano.key('F2').index, self.piano.key('G2').index))
-
 		randColour = lambda: (randint(0,255), randint(0,255), randint(0,255))
 
 		self.always = lambda dt: self.tick(dt)
