@@ -7,7 +7,7 @@
 #
 
 # TODO | - Find the pattern, generate chords programmatically
-#        -
+#        - 
 #
 # SPEC | -
 #        -
@@ -27,7 +27,7 @@ class Chords(object):
 	D = (1, 3, 5)
 	E = (2, 4, 6)
 	F = (3, 5, 7)
-	G = (4, 6, 8)
+	G = (7, 11, 14)
 	A = (5, 7, 9)
 	B = (6, 8, 10)
 

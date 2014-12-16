@@ -7,7 +7,7 @@
 #
 
 # TODO | - Unicode accidentals (?)
-#        - 
+#        - Implement testing for every component
 #
 # SPEC | -
 #        -
@@ -33,12 +33,16 @@ class Key(object):
 	RIGHT  = 4
 	MIDDLE = 5 # TODO: Rename BOTH (?)
 
+	accidentals = {1, 3, 6, 8, 10} # TODO: Extract this value (useful in multiple contexts) (✓)
+	whites = set(range(12)) - accidentals
+
 	# Table of conversion functions TO an index
-	# NOTE: Assumes accidental comes last
+	# NOTE: Assumes accidental comes last (eg. C5♭ and not C♭5)
+	# TODO: Remove support for tuples (?)
 	conversions = {
-		int: 	lambda self, k: k,								 														# Index (eg. 5)
-		tuple:  lambda self, k: (k[1]-1)*7 + 'CDEFGAB'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]),	# (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
-		str:	lambda self, k: (int(k[1]))*7 + 'CDEFGAB'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]) 	# Note name (eg. 'G2')
+		int: 	lambda self, k: k,								 															 # Index (eg. 5)
+		tuple:  lambda self, k: (k[1])*12 + 'C D EF G A B'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]),	 # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
+		str:	lambda self, k: (int(k[1]))*12 + 'C D EF G A B'.index(k[0]) + (0 if len(k) < 3 else {'b': -1, '#': 1}[k[2]]) # Note name (eg. 'G2')
 	}
 
 	# Table of conversion functions FROM an index
@@ -76,12 +80,14 @@ class Key(object):
 
 	def normalize(self, key):
 		# Converts to an index
-		return self.alias(key, to=int)
+		a = self.alias(key, to=int)
+		# debug('Normalized {!r} to {}'.format(key, a))
+		return a
 
 
-	def note(self, key):
+	def note(self, index):
 		# TODO: Use string as key instead, would probably be more legible (?)
-		assert isinstance(key, int), '{!r} is not an integer, dummy!'.format(key)
+		assert isinstance(index, int), '{!r} is not an integer, dummy!'.format(index)
 		return 'CDEFGAB'[MultiSwitch({
 			(0,1):  0,
 			(2,3):  1,
@@ -89,7 +95,7 @@ class Key(object):
 			(5,6):  3,
 			(7,8):  4,
 			(9,10): 5,
-			(11,):  6})[key%12]] # TODO: Take offset and accidentals into account
+			(11,):  6}, mnemonic='octaves')[index%12]] # TODO: Take offset and accidentals into account
 
 
 	def octave(self, key):
@@ -119,10 +125,9 @@ class Key(object):
 		# TODO: Make static (?)
 		
 		assert isinstance(key, int) # or isinstance(key, str)
-		accidentals = (1, 3, 6, 8, 10) # TODO: Extract this value (useful in multiple contexts)
 		# key = key%12
 		# (key < 5 and key % 2 == 1) or (key > 5 and key % 2 == 0)
-		acc = ('', '#', 'b')[(key%12) in accidentals] # Treats bool as index
+		acc = ('', '#', 'b')[(key%12) in self.accidentals] # Treats bool as index
 		return acc
 
 
@@ -131,10 +136,17 @@ class Key(object):
 		# NOTE: Currently, this method will always return an index (int)
 		# TODO: Implement multi-way mapping or translation (maybe via an A to B to C and C to B to A scheme)
 		# TODO: More elegant scheme for lazy evaluation (?)
-		debug('key={!r}, to={!r}'.format(key, to))
-		index = self.conversions[type(key)](self, key)
-		debug('Index of %r is %d' % (key, index))
-		return self.aliases[to](self, index)
+		
+		# debug('key={!r}, to={!r}'.format(key, to))
+		
+		frm = type(key)
+
+		if frm is to:
+			return key
+		else:
+			index = self.conversions[frm](self, key)
+			debug('Index of %r is %d' % (key, index))
+			return self.aliases[to](self, index)
 
 
 	def findKind(self):
@@ -151,7 +163,7 @@ class Key(object):
 
 
 	def __repr__(self):
-		return 'Key(index={.index}, name={.name}, type={.type}'.format(self)
+		return 'Key(index={0.index}, name={0.name}, type={0.kind})'.format(self)
 
 
 	def makeVertices(self, sizeWhite, sizeBlack):
@@ -178,21 +190,37 @@ class Key(object):
 		return absolute[0]+self.sizeWhite[0]*(self.octave(self.index)*7+'CDEFGAB'.index(self.name[0])), absolute[1]
 
 
-	def inside(self, x, y):
+	def bounds(self, origin=(0, 0)):
+
+		'''
+		Bounding box(es)
+
+		'''
+
+		ox, oy = self.origin(absolute=origin)
+		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack
+
+		return {
+			Key.BLACK: (pygame.Rect(ox+dx-bdx/2, 0.0+oy, bdx, bdy), ),
+			Key.WHITE: (pygame.Rect(ox+bdx/2.0, 0.0+oy, dx-bdx, bdy), pygame.Rect(0.0+ox, oy+bdy, dx, dy-bdy))
+		}[self.kind]
+
+
+	def inside(self, x, y, origin=(0, 0)):
 		# Deterimines if a point lies on the key
-		return False # TODO: Implement (duh)
+		return any(rect.collidepoint(x,y) for rect in self.bounds(origin=origin)) # TODO: Implement (duh) (...)
 
 
-	def render(self, surface, outline=(0,0,0), origin=(0,0), labelled=False):
+	def render(self, surface, outline=(0,0,0), origin=(0,0), labelled=False, **labelOptions):
 
-		# TODO: Cache translation (?)
+		# TODO: Cache vertex translation (?)
 		# TODO: Key.offset utility method
 
-		debug('Octave of %s is %d' % (self, self.octave(self.index)))
-		debug('Horizontal offset is %d\n' % (dx*self.octave(self.index)*7))
-
 		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
-		corner = self.origin(origin)
+		corner = self.origin(absolute=origin)
+
+		# debug('Octave of %s is %d' % (self, self.octave(self.index)))
+		# debug('Horizontal offset is %d\n' % (dx*self.octave(self.index)*7))
 		
 		vertices = self.translate(corner[0]-self.first*self.sizeWhite[0], corner[1], self.vertices) # TODO: extract offset logic (affects labels too)
 		
@@ -200,7 +228,7 @@ class Key(object):
 		pygame.draw.aalines(surface, outline, True, vertices, True)
 		
 		if labelled:
-			self.label(surface, origin=corner)
+			self.label(surface, origin=corner, **labelOptions)
 
 
 	def translate(self, dx, dy, vertices):
