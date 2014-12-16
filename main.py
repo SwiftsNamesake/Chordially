@@ -53,7 +53,7 @@ class Application(EventDispatcher):
 
 	'''
 
-	def __init__(self, title, size, resizable=True):
+	def __init__(self, title, size, resizable=True, icon=None):
 		
 		'''
 		Docstring goes here
@@ -70,7 +70,7 @@ class Application(EventDispatcher):
 		self.clock = pygame.time.Clock()
 
 		# App data
-		self.piano = Piano()
+		self.piano = Piano(scale=20, compass=(3, 88))
 
 		# Events
 		self.bindEvents()
@@ -82,22 +82,22 @@ class Application(EventDispatcher):
 		Docstring goes here
 
 		'''
-		
+
 		self.always = lambda dt: self.tick(dt)
-		self.bind({'type': KEYDOWN, 'mod': 1}, lambda p, e: print('Hello'))
-		self.bind({'type': KEYDOWN, 'key': K_ESCAPE}, lambda p, e: pygame.quit())
+		self.bind({'type': KEYDOWN, 'mod': 1}, 			lambda p, e: print('Hello'))
+		self.bind({'type': KEYDOWN, 'key': K_ESCAPE}, 	lambda p, e: pygame.quit())
+		self.bind({'type': KEYUP, 'key': K_SPACE}, 		lambda p, e: self.piano.releaseChord((5, 9, 12)))
 		self.bind({'type': KEYDOWN, 'key': K_SPACE, 'doc': 'Play an F chord'}, lambda p, e: (print(p.doc), self.piano.playChord((5, 9, 12))))
-		self.bind({'type': KEYUP, 'key': K_SPACE}, lambda p, e: self.piano.playChord((5, 9, 12), fill=(255, 255, 255)))
 
 
 	def tick(self, dt):
 
 		'''
 		Docstring goes here
-
+		
 		'''
 
-		self.canvas.fill(((0, 72, 50), (0xFF, 0xFF, 0), colours['BG'])[2])
+		self.canvas.fill(((0, 72, 50), (0xFF, 0xFF, 0x0), colours['BG'])[2])
 		self.piano.render(self.canvas, (20, 20))
 		pygame.display.flip()
 		self.clock.tick(60)
@@ -115,14 +115,15 @@ class Application(EventDispatcher):
 
 
 def main():
-	
+
 	'''
 	Docstring goes here
 
 	'''
 
-	app = Application('Chordially', (720*2, 480))
+	app = Application('Chordially', (int(2.0*20*88*7/12) + 2 * 20, int(13.5*20) + 2 * 20))
 	app.run()
+
 
 
 if __name__ == '__main__':

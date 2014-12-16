@@ -53,6 +53,7 @@ class Key(object):
 
 	lazy = lambda code, capture='': eval('lambda {}: {}'.format(code, capture))
 
+
 	def __init__(self, which, sizeWhite, sizeBlack, first='C0'):
 		#
 		self.first = self.normalize(first) # First (leftmost) key (useful for calculating indeces)
@@ -80,15 +81,15 @@ class Key(object):
 
 	def note(self, key):
 		# TODO: Use string as key instead, would probably be more legible (?)
-		assert isinstance(key, int)
+		assert isinstance(key, int), '{!r} is not an integer, dummy!'.format(key)
 		return 'CDEFGAB'[MultiSwitch({
-			(0,1): 0,
-			(2,3): 1,
-			(4,): 2,
-			(5,6): 3,
-			(7,8): 4,
+			(0,1):  0,
+			(2,3):  1,
+			(4,):   2,
+			(5,6):  3,
+			(7,8):  4,
 			(9,10): 5,
-			(11,): 6})[key%12]] # TODO: Take offset and accidentals into account
+			(11,):  6})[key%12]] # TODO: Take offset and accidentals into account
 
 
 	def octave(self, key):
@@ -183,16 +184,21 @@ class Key(object):
 
 
 	def render(self, surface, outline=(0,0,0), origin=(0,0), labelled=False):
+
 		# TODO: Cache translation (?)
 		# TODO: Key.offset utility method
-		# if self.kind==self.BLACK: pass
-		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
+
 		debug('Octave of %s is %d' % (self, self.octave(self.index)))
 		debug('Horizontal offset is %d\n' % (dx*self.octave(self.index)*7))
+
+		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
 		corner = self.origin(origin)
-		vertices = self.translate(corner[0], corner[1], self.vertices)
+		
+		vertices = self.translate(corner[0]-self.first*self.sizeWhite[0], corner[1], self.vertices) # TODO: extract offset logic (affects labels too)
+		
 		pygame.draw.polygon(surface, self.fill, vertices)
 		pygame.draw.aalines(surface, outline, True, vertices, True)
+		
 		if labelled:
 			self.label(surface, origin=corner)
 
@@ -203,10 +209,11 @@ class Key(object):
 
 	def label(self, surface, fill=(0xB1, 0xB0, 0xA3), pady=5.0, origin=(0,0)):
 		# TODO: Refactor, clarify and comment the position calculations (?)
-		# TODO: Fix origin
+		# TODO: Fix origin (✓)
 		dx, dy, bdx, bdy = self.sizeWhite + self.sizeBlack # Unpack widths and heights
 		text = self.font.render(self.name, 2, fill) # Label text, anti-alias, fill colour
-		surface.blit(text, (origin[0]+(dx-text.get_size()[0])/2, origin[1]+dy-text.get_size()[1]-pady))
+		# TODO: extract offset logic (affects labels too)
+		surface.blit(text, (origin[0]+(dx-text.get_size()[0])/2-self.first*self.sizeWhite[0], origin[1]+dy-text.get_size()[1]-pady))
 
 
 	def play(self, fill=(210, 190, 50), duration=None):
@@ -216,12 +223,25 @@ class Key(object):
 
 		'''
 
+		# TODO: Add state flag (PRESSED, RELEASED)
+
 		self.oldfill = self.fill # Save current fill colour so that that it can be restored later (when the key is released)
 		self.fill = fill
 		if duration is not None:
 			pass
 
 		# raise NotImplementedError('No audio for now I\'m afraid. Sincere apologies.')
+
+
+	def release(self):
+
+		'''
+		Release the key
+
+		'''
+
+		self.fill = self.oldfill
+
 
 
 def main():

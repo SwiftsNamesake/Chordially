@@ -29,7 +29,7 @@ class Piano(object):
 
 	'''
 	
-	def __init__(self):
+	def __init__(self, scale=20, compass=(0, 88)):
 
 		'''
 		Docstring goes here
@@ -37,17 +37,19 @@ class Piano(object):
 		'''
 
 		# Dimensions
-		self.dx = 2.0  * 20 # Width of a white key
-		self.dy = 13.5 * 20 # Height of a white key
+		self.dx = 2.0  * scale # Width of a white key
+		self.dy = 13.5 * scale # Height of a white key
 
-		self.bdx = 1.2 * 20 # Width of a black key
-		self.bdy = 8.5 * 20 # Height of a black key
+		self.bdx = 1.2 * scale # Width of a black key
+		self.bdy = 8.5 * scale # Height of a black key
 		
 		# Settings
-
+		self.keyUtils = Key(0, (self.dx, self.dy), (self.bdx, self.bdy)) 							# Key instance (gives us access to instance methods)
+		self.compass  = (self.keyUtils.normalize(compass[0]), self.keyUtils.normalize(compass[1])) 	# Range of keyboard
+		debug(self.compass)
 		#
-		self.surface = pygame.Surface((self.dx*88/12*7, 10.0+self.dy)) 	#
-		self.keys 	 = self.build()										# Create the piano
+		self.surface = pygame.Surface((self.dx*7*(self.compass[1]-self.compass[0])/12, self.dy)) 	# 
+		self.keys 	 = self.build(self.compass)														# Create the piano
 
 		self.update()
 
@@ -74,8 +76,10 @@ class Piano(object):
 
 
 	def key(self, key):
+		# TODO: Use Key alias utilities
+		# TODO: Take offset into account (...)
 		return {
-			int: 	lambda: self.keys[key],									# Index (eg. 5)
+			int: 	lambda: self.keys[key-self.compass[0]],					# Index (eg. 5)
 			tuple:  lambda: self.keys[(key[1]-1)*7 + 'CDEFGAB'.index(key)], # (Note, Octave) (eg. ('A', 3)) # TODO: Fix alignment
 			str:	lambda: self.keys((key[0], int(key[1]))) 				# Note name (eg. 'G2')
 		}[type(key)]()
@@ -85,7 +89,7 @@ class Piano(object):
 		return [(vtx[0]+dx, vtx[1]+dy) for vtx in vertices]
 
 
-	def build(self):
+	def build(self, compass):
 
 		'''
 		Builds the components of the piano
@@ -113,35 +117,7 @@ class Piano(object):
 		# |      |  
 		# |______|  
 
-		# full white, right inset, left inset
-		# whiteM = [(0.0, dy), (dx, dy), (dx, bdy), (dx-bdx/2, bdy), (dx-bdx/2, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)] # Middle white
-		# whiteL = whiteM[:2] + [(dx, 0.0), (bdx/2, 0.0), (bdx/2, bdy), (0.0, bdy)] 											# White with left inset
-		# whiteR = whiteM[:5] + [(0.0, 0.0), (0.0, dy)] 																		# White with right inset
-
-		# black = self.translate(dx-bdx/2, 0.0, [(0.0, 0.0), (bdx, 0.0), (bdx, bdy), (0.0, bdy)])
-
-		# polygon = pygame.draw.polygon
-		# aalines = pygame.draw.aalines
-
-		# # s.fill(colours['BG'])
-
-		# octave = pygame.Surface((dx*7+10, dy+10))
-
-		# for i in range(7):
-		# 	self.drawKey(octave, self.translate(dx*i+5.0, 5.0, [whiteR, whiteM, whiteL, whiteR, whiteM, whiteM, whiteL][i])) # Whole note
-		# 	self.drawLabel(octave, 'CDEFGAB'[i%7] + str(i//7), origin=(dx*i+5.0, 5.0)) # Note label TODO: Calculate offsets properly
-		# 	if i not in (2, 6):
-		# 		# Accidental
-		# 		polygon(octave, 0xFF0000, self.translate(dx*i+5.0, 0.0+5.0, black))
-		# 		aalines(octave, (0,0,0), True, self.translate(dx*i+5.0, 0.0+5.0, black), 2)
-
-		# drawKey(s, whiteM)
-		# drawKey(s, translate(dx+5, 0, whiteL))
-		# drawKey(s, translate((dx+5)*2, 0, whiteR))
-
-		# surface.blit(s, (10,10))
-		# self.surface.blit(octave, (0,0))
-		return [Key(i, (dx, dy), (bdx, bdy)) for i in range(88)]
+		return [Key(i, (dx, dy), (bdx, bdy), first=compass[0]) for i in range(*compass)]
 
 
 	def playChord(self, chord, fill=(210, 190, 50)):
@@ -155,6 +131,17 @@ class Piano(object):
 			self.key(note).play(fill=fill)
 		self.update()
 
+
+	def releaseChord(self, chord):
+		
+		'''
+		Docstring goes here
+
+		'''
+
+		for note in chord:
+			self.key(note).release()
+		self.update()
 
 
 def main():

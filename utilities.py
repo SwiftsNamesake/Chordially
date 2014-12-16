@@ -14,7 +14,11 @@
 
 
 
-DEBUG = False
+from inspect import getframeinfo, currentframe
+
+
+
+DEBUG = True
 
 if not DEBUG:
 	def debug(*args, **kwargs):
